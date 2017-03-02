@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace new_core_api
+namespace dot_net_st_pete_api
 {
     public class Startup
     {
