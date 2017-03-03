@@ -1,3 +1,6 @@
 # .net
 /bin
 /obj
+
+# npm
+npm-debug.log
