@@ -16,9 +16,9 @@ namespace dot_net_st_pete_api.Auth
     public class JwtMiddleware
     {
         private readonly RequestDelegate next;
-        private readonly JwtIssuer jwtIssuerOptions;
+        private readonly JwtIssuerOptions jwtIssuerOptions;
 
-        public JwtMiddleware(RequestDelegate next, IOptions<JwtIssuer> jwtIssuerOptions)
+        public JwtMiddleware(RequestDelegate next, IOptions<JwtIssuerOptions> jwtIssuerOptions)
         {
             this.next = next;
             this.jwtIssuerOptions = jwtIssuerOptions.Value;
@@ -66,14 +66,14 @@ namespace dot_net_st_pete_api.Auth
                 return;
             }
 
-            var now = DateTime.UtcNow;
-
             // add claims to the jwt
             var claims = new Claim[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, now.ToString(), ClaimValueTypes.Integer64)
+                new Claim(JwtRegisteredClaimNames.Iat,
+                  ToUnixEpochDate(jwtIssuerOptions.IssuedAt).ToString(),
+                  ClaimValueTypes.Integer64),
             };
 
             // create jwt, base64 encode
@@ -81,8 +81,8 @@ namespace dot_net_st_pete_api.Auth
                 issuer: jwtIssuerOptions.Issuer,
                 audience: jwtIssuerOptions.Audience,
                 claims: claims,
-                notBefore: now,
-                expires: now.Add(jwtIssuerOptions.Expiration),
+                notBefore: jwtIssuerOptions.NotBefore,
+                expires: jwtIssuerOptions.Expiration,
                 signingCredentials: jwtIssuerOptions.SigningCredentials);
 
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
@@ -90,7 +90,7 @@ namespace dot_net_st_pete_api.Auth
             var response = new
             {
                 access_token = encodedJwt,
-                expires_in = (int)jwtIssuerOptions.Expiration.TotalSeconds
+                expires_in = (int)jwtIssuerOptions.ValidFor.TotalSeconds
             };
 
             // Serialize and return the response
@@ -132,5 +132,11 @@ namespace dot_net_st_pete_api.Auth
             // Credentials are invalid, or account doesn't exist
             return Task.FromResult<ClaimsIdentity>(null);
         }
+
+        /// <returns>Date converted to seconds since Unix epoch (Jan 1, 1970, midnight UTC).</returns>
+        private static long ToUnixEpochDate(DateTime date)
+          => (long)Math.Round((date.ToUniversalTime() -
+                               new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero))
+                              .TotalSeconds);
     }
 }
