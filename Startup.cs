@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using dot_net_st_pete_api.Auth;
+using dot_net_st_pete_api.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -36,6 +37,9 @@ namespace dot_net_st_pete_api
         {
             // Add framework services.
             services.AddOptions();
+
+            // register the mongo repository
+            services.AddTransient<MongoRepository>();
 
             // lock down all routes
             services.AddMvc(config =>
