@@ -44,10 +44,23 @@ namespace dot_net_st_pete_api.Repository
             var operation = Update<JournalEntry>.Replace(p);
             _db.GetCollection<JournalEntry>("JournalEntry").Update(res, operation);
         }
+
         public void Remove(ObjectId id)
         {
             var res = Query<JournalEntry>.EQ(e => e.Id, id);
             var operation = _db.GetCollection<JournalEntry>("JournalEntry").Remove(res);
+        }
+
+        public User CreateUser(User u)
+        {
+            _db.GetCollection<User>("User").Save(u);
+            return u;
+        }
+
+        public User GetUser(string email)
+        {
+            var res = Query<User>.EQ(u => u.Email, email);
+            return _db.GetCollection<User>("User").FindOne(res);
         }
     }
 }
