@@ -41,6 +41,7 @@ namespace dot_net_st_pete_api.Controllers
             mongo.Create(p);
             return new OkObjectResult(p);
         }
+        
         [HttpPut("{id:length(24)}")]
         public IActionResult Put(string id, [FromBody]JournalEntry p)
         {
