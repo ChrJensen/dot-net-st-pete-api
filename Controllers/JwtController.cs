@@ -9,7 +9,7 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using dot_net_st_pete_api.Models;
-using dot_net_st_pete_api.Auth;
+using dot_net_st_pete_api.Jwt;
 
 namespace dot_net_st_pete_api.Controllers
 {

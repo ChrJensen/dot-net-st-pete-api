@@ -2,7 +2,7 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Threading.Tasks;
 
-namespace dot_net_st_pete_api.Auth
+namespace dot_net_st_pete_api.Jwt
 {
     public class JwtIssuerOptions
     {

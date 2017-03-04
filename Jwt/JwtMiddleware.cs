@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 // todo: not currently being used - this would replace the JwtController
 
-namespace dot_net_st_pete_api.Auth
+namespace dot_net_st_pete_api.Jwt
 {
     public class JwtMiddleware
     {

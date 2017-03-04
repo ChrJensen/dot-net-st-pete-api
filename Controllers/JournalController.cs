@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using dot_net_st_pete_api.Models;
+using dot_net_st_pete_api.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;

@@ -1,7 +1,7 @@
 using System;
 using System.Text;
-using dot_net_st_pete_api.Auth;
-using dot_net_st_pete_api.Models;
+using dot_net_st_pete_api.Jwt;
+using dot_net_st_pete_api.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
