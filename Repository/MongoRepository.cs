@@ -2,8 +2,9 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using System.Collections.Generic;
+using dot_net_st_pete_api.Models;
 
-namespace dot_net_st_pete_api.Models
+namespace dot_net_st_pete_api.Repository
 {
     public class MongoRepository
     {
