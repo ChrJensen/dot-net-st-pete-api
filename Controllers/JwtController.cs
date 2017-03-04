@@ -10,6 +10,7 @@ using System.Security.Principal;
 using System.Threading.Tasks;
 using dot_net_st_pete_api.Models;
 using dot_net_st_pete_api.Jwt;
+using dot_net_st_pete_api.Repository;
 
 namespace dot_net_st_pete_api.Controllers
 {
@@ -19,9 +20,11 @@ namespace dot_net_st_pete_api.Controllers
         private readonly JwtIssuerOptions _jwtOptions;
         private readonly ILogger _logger;
         private readonly JsonSerializerSettings _serializerSettings;
+        MongoRepository mongo;
 
-        public JwtController(IOptions<JwtIssuerOptions> jwtOptions, ILoggerFactory loggerFactory)
+        public JwtController(IOptions<JwtIssuerOptions> jwtOptions, ILoggerFactory loggerFactory, MongoRepository mongo)
         {
+            this.mongo = mongo;
             _jwtOptions = jwtOptions.Value;
             ThrowIfInvalidOptions(_jwtOptions);
 
@@ -33,11 +36,43 @@ namespace dot_net_st_pete_api.Controllers
             };
         }
 
+        [Route("create")]
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> Get([FromForm] User user)
+        public async Task<IActionResult> Create([FromBodyAttribute] User user)
         {
-            var identity = await GetClaimsIdentity(user);
+            if (user.Email == null || user.Password == null)
+            {
+                var badUserJson = JsonConvert.SerializeObject(new { message = "Email and Password are required" }, _serializerSettings);
+                return new BadRequestObjectResult(badUserJson);
+            }
+
+            // hash and save a password
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
+            var foundUser = mongo.GetUser(user.Email);
+            if (foundUser != null)
+            {
+                var badUserJson = JsonConvert.SerializeObject(new { message = "Whoops, have you already registered?" }, _serializerSettings);
+                return new BadRequestObjectResult(badUserJson);
+            }
+
+            var createdUser = mongo.CreateUser(new User
+            {
+                Email = user.Email,
+                Password = hashedPassword
+            });
+
+            var json = JsonConvert.SerializeObject(createdUser, _serializerSettings);
+            return new OkObjectResult(json);
+        }
+
+        [Route("login")]
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> Login([FromBodyAttribute] User user)
+        {
+            var identity = await VerifyUser(user);
             if (identity == null)
             {
                 _logger.LogInformation($"Invalid email ({user.Email}) or password ({user.Password})");
@@ -107,28 +142,28 @@ namespace dot_net_st_pete_api.Controllers
         /// You'd want to retrieve claims through your claims provider
         /// in whatever way suits you, the below is purely for demo purposes!
         /// </summary>
-        private static Task<ClaimsIdentity> GetClaimsIdentity(User user)
+        private Task<ClaimsIdentity> VerifyUser(User user)
         {
-            if (user.Email == "MickeyMouse" && user.Password == "123")
+            var foundUser = mongo.GetUser(user.Email);
+            if (foundUser == null)
             {
-                return Task.FromResult(new ClaimsIdentity(
-                  new GenericIdentity(user.Email, "Token"),
-                  new[]
-                  {
-                      new Claim("DisneyCharacter", "IAmMickey")
-                  })
-                );
+                // user does not exist
+                return Task.FromResult<ClaimsIdentity>(null);
             }
 
-            if (user.Email == "johnrhampton@gmail.com" && user.Password == "123")
+            // verify password matches
+            bool validPassword = BCrypt.Net.BCrypt.Verify(user.Password, foundUser.Password);
+            if (validPassword)
             {
                 return Task.FromResult(new ClaimsIdentity(
-                  new GenericIdentity(user.Email, "Token"),
-                  new Claim[] { }));
+                                  new GenericIdentity(user.Email, "Token"),
+                                  new Claim[] { }));
             }
-
-            // Credentials are invalid, or account doesn't exist
-            return Task.FromResult<ClaimsIdentity>(null);
+            else
+            {
+                // invalid credentials
+                return Task.FromResult<ClaimsIdentity>(null);
+            }
         }
     }
 }
