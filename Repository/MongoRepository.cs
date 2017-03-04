@@ -1,53 +1,214 @@
-using MongoDB.Bson;
-using MongoDB.Driver;
-using MongoDB.Driver.Builders;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using dot_net_st_pete_api.Models;
 
 namespace dot_net_st_pete_api.Repository
 {
-    public class MongoRepository
-    {
-        MongoClient _client;
-        MongoServer _server;
-        MongoDatabase _db;
 
+    /// <summary>
+    /// Generic Mongo Repository
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class MongoRepository<T> : IRepository<T> where T : BaseModel
+    {
+        /// <summary>
+        /// Mongo Database
+        /// </summary>
+        private IMongoDatabase _database;
+        /// <summary>
+        /// Mongo Collection
+        /// </summary>
+        private IMongoCollection<T> _collection;
+
+        /// <summary>
+        /// Gets the collection.
+        /// </summary>
+        /// <value>
+        /// The collection.
+        /// </value>
+        protected IMongoCollection<T> Collection
+        {
+            get { return _collection; }
+        }
+
+        /// <summary>
+        /// Initializes the <see cref="MongoRepository{T}"/> class.
+        /// Prepare Mappings and Conventions packs
+        /// </summary>
+        static MongoRepository()
+        {
+            // MongoClassMapHelper.RegisterConventionPacks();
+            // MongoClassMapHelper.SetupClassMap();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MongoRepository{T}"/> class.
+        /// </summary>
+        /// <param name="connectionString">The connection string.</param>
+        /// <exception cref="System.ArgumentException">Missing MongoDB connection string</exception>
         public MongoRepository()
         {
-            _client = new MongoClient("mongodb://localhost:27017");
-            _server = _client.GetServer();
-            _db = _server.GetDatabase("dot-net-st-pete-api");
+            var client = new MongoClient("mongodb://localhost:27017");
+            MongoUrl mongoUrl = MongoUrl.Create("mongodb://localhost:27017");
+            this._database = client.GetDatabase("dot-net-st-pete-api");
+            this._collection = this.SetupCollection();
         }
 
-        public IEnumerable<JournalEntry> GetJournalEntries()
+        /// <summary>
+        /// Setups the collection.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual IMongoCollection<T> SetupCollection()
         {
-            return _db.GetCollection<JournalEntry>("JournalEntry").FindAll();
+            try
+            {
+                var collectionName = this.BuildCollectionName();
+                var collection = this._database.GetCollection<T>(collectionName);
+                return collection;
+            }
+            catch (MongoException ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Builds the name of the collection.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string BuildCollectionName()
+        {
+            var pluralizedName = typeof(T).Name.EndsWith("s") ? typeof(T).Name : typeof(T).Name + "s";
+            return pluralizedName;
         }
 
 
-        public JournalEntry GetJournalEntry(ObjectId id)
+        /// <summary>
+        /// Inserts the specified entity.
+        /// </summary>
+        /// <param name="entity">The entity.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        /// <exception cref="RepositoryException"></exception>
+        public virtual async Task<T> Insert(T entity, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var res = Query<JournalEntry>.EQ(p => p.Id, id);
-            return _db.GetCollection<JournalEntry>("JournalEntry").FindOne(res);
+            // todo: add entity not null check
+
+            if (entity.Id == null)
+            {
+                entity.Id = ObjectId.GenerateNewId();
+            }
+
+            try
+            {
+                entity.CreatedAt = DateTime.UtcNow;
+                entity.UpdatedAt = DateTime.UtcNow;
+                await this._collection.InsertOneAsync(entity, cancellationToken);
+            }
+            catch (MongoWriteException ex)
+            {
+                throw new Exception("Entity already exists!");
+            }
+
+            return entity;
         }
 
-        public JournalEntry Create(JournalEntry p)
+
+        /// <summary>
+        /// Updates the specified entity.
+        /// </summary>
+        /// <param name="entity">The entity.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        /// <exception cref="RepositoryException">Document version conflits. (Is out of date)</exception>
+        public virtual async Task<T> Update(T entity, CancellationToken cancellationToken = default(CancellationToken))
         {
-            _db.GetCollection<JournalEntry>("JournalEntry").Save(p);
-            return p;
+            // todo: add entity not null check
+
+            var previousUpdateDate = entity.UpdatedAt;
+            entity.UpdatedAt = DateTime.UtcNow;
+
+            ReplaceOneResult result;
+
+            var idFilter = Builders<T>.Filter.Eq(e => e.Id, entity.Id); //Find entity with same Id
+
+            result = await this.Collection.ReplaceOneAsync(idFilter, entity, null, cancellationToken);
+
+            if (result != null && ((result.IsAcknowledged && result.MatchedCount == 0) || (result.IsModifiedCountAvailable && !(result.ModifiedCount > 0))))
+                throw new Exception("Entity does not exist.");
+
+            return entity;
         }
 
-        public void Update(ObjectId id, JournalEntry p)
+
+        /// <summary>
+        /// Gets entity by id.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        public virtual async Task<T> Get(ObjectId id, CancellationToken cancellationToken = default(CancellationToken))
         {
-            p.Id = id;
-            var res = Query<JournalEntry>.EQ(pd => pd.Id, id);
-            var operation = Update<JournalEntry>.Replace(p);
-            _db.GetCollection<JournalEntry>("JournalEntry").Update(res, operation);
+            return await this._collection.Find(e => e.Id == id).FirstOrDefaultAsync(cancellationToken);
         }
-        public void Remove(ObjectId id)
+
+        /// <summary>
+        /// Deletes entity by id.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        public virtual async Task<T> Delete(ObjectId id, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var res = Query<JournalEntry>.EQ(e => e.Id, id);
-            var operation = _db.GetCollection<JournalEntry>("JournalEntry").Remove(res);
+            return await this._collection.FindOneAndDeleteAsync(e => e.Id == id, null, cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Gets all entities.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        public virtual async Task<IEnumerable<T>> GetAll(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await this._collection.Find(e => true).ToListAsync(cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Paginations the entites.
+        /// </summary>
+        /// <param name="top">The top.</param>
+        /// <param name="skip">The skip.</param>
+        /// <param name="orderBy">The order by.</param>
+        /// <param name="ascending">if set to <c>true</c> [ascending].</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        public virtual async Task<IEnumerable<T>> Pagination(int top, int skip, Func<T, object> orderBy, bool ascending = true, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var query = this._collection.Find(e => true).Skip(skip).Limit(top);
+
+            if (ascending)
+                return await query.SortBy(e => e.Id).ToListAsync();
+            else
+                return await query.SortByDescending(e => e.Id).ToListAsync(cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Ignores the document version.
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool IgnoreVersion()
+        {
+            return false;
         }
     }
 }
