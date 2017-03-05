@@ -35,6 +35,9 @@ namespace dot_net_st_pete_api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // add cors
+            services.AddCors();
+
             // Add framework services.
             services.AddOptions();
 
@@ -66,6 +69,10 @@ namespace dot_net_st_pete_api
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
+
+            // Shows UseCors with CorsPolicyBuilder.
+            app.UseCors(builder =>
+               builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
             // todo: explore middleware approach
             // app.UseSimpleTokenProvider(new JwtIssuer

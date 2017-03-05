@@ -4,6 +4,7 @@
             "version": "1.1.0",
             "type": "platform"
         },
+        "Microsoft.AspNetCore.Cors": "1.1.0",
         "Microsoft.AspNetCore.Authentication.JwtBearer": "1.1.0",
         "Microsoft.AspNetCore.Mvc": "1.1.0",
         "Microsoft.AspNetCore.Routing": "1.1.0",
@@ -17,7 +18,7 @@
         "Microsoft.Extensions.Logging.Console": "1.1.0",
         "Microsoft.Extensions.Logging.Debug": "1.1.0",
         "Microsoft.Extensions.Options.ConfigurationExtensions": "1.1.0",
-        "Microsoft.IdentityModel.Tokens": "5.1.2", 
+        "Microsoft.IdentityModel.Tokens": "5.1.2",
         "mongocsharpdriver": "2.4.2",
         "BCrypt.Net-Core": "1.1.0"
     },
