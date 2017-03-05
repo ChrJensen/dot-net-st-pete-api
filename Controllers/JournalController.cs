@@ -1,72 +1,41 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using dot_net_st_pete_api.Models;
 using dot_net_st_pete_api.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
+using Newtonsoft.Json;
 
 namespace dot_net_st_pete_api.Controllers
 {
     [Route("[controller]")]
     public class JournalController : Controller
     {
-        MongoRepository mongo;
+        private readonly IJournalRepository journalRepository;
 
-        public JournalController(MongoRepository mongo)
+        public JournalController(IJournalRepository journalRepository)
         {
-            this.mongo = mongo;
+            this.journalRepository = journalRepository;
         }
 
         [HttpGet]
-        public IEnumerable<JournalEntry> Get()
+        public Task<IEnumerable<JournalEntry>> Get()
         {
-            return mongo.GetJournalEntries();
+            return GetEntries();
         }
 
-        [HttpGet("{id:length(24)}")]
-        public IActionResult Get(string id)
+        private async Task<IEnumerable<JournalEntry>> GetEntries()
         {
-            var product = mongo.GetJournalEntry(new ObjectId(id));
-            if (product == null)
-            {
-                return NotFound();
-            }
-            return new ObjectResult(product);
+            return await journalRepository.GetAllJournalEntries();
         }
 
         [HttpPost]
         [AllowAnonymous]
-        public IActionResult Post([FromBody]JournalEntry p)
+        public IActionResult Post([FromBody]JournalEntry j)
         {
-            mongo.Create(p);
-            return new OkObjectResult(p);
-        }
-        
-        [HttpPut("{id:length(24)}")]
-        public IActionResult Put(string id, [FromBody]JournalEntry p)
-        {
-            var recId = new ObjectId(id);
-            var product = mongo.GetJournalEntry(recId);
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            mongo.Update(recId, p);
-            return new OkResult();
-        }
-
-        [HttpDelete("{id:length(24)}")]
-        public IActionResult Delete(string id)
-        {
-            var product = mongo.GetJournalEntry(new ObjectId(id));
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            mongo.Remove(product.Id);
-            return new OkResult();
+            journalRepository.AddJournalEntry(j);
+            return new OkObjectResult(j);
         }
     }
 }
