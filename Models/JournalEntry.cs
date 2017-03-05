@@ -7,11 +7,14 @@ namespace dot_net_st_pete_api.Models
     public class JournalEntry
     {
         public ObjectId Id { get; set; }
+        public string Brewery { get; set; }
         [BsonElement("BeerName")]
         public string BeerName { get; set; }
         [BsonElement("SampleDate")]
         public DateTime SampleDate { get; set; }
         [BsonElement("SampleNotes")]
         public string SampleNotes { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
     }
 }
