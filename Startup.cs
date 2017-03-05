@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using dot_net_st_pete_api.Jwt;
+using dot_net_st_pete_api.Models;
 using dot_net_st_pete_api.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -41,8 +42,9 @@ namespace dot_net_st_pete_api
             // Add framework services.
             services.AddOptions();
 
-            // register the mongo repository
-            services.AddTransient<MongoRepository>();
+            // access Repository using DI Model
+            services.AddTransient<IJournalRepository, JournalRepository>();
+            services.AddTransient<IUserRepository, UserRepository>();
 
             // lock down all routes
             services.AddMvc(config =>
@@ -51,6 +53,12 @@ namespace dot_net_st_pete_api
                                  .RequireAuthenticatedUser()
                                  .Build();
                 config.Filters.Add(new AuthorizeFilter(policy));
+            });
+
+            services.Configure<MongoSettings>(options =>
+            {
+                options.ConnectionString = Configuration.GetSection("MongoConnection:ConnectionString").Value;
+                options.Database = Configuration.GetSection("MongoConnection:Database").Value;
             });
 
             var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
