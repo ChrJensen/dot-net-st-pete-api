@@ -15,20 +15,20 @@ using dot_net_st_pete_api.Repository;
 namespace dot_net_st_pete_api.Controllers
 {
     [Route("[controller]")]
-    public class JwtController : Controller
+    public class UserController : Controller
     {
         private readonly JwtIssuerOptions _jwtOptions;
         private readonly ILogger _logger;
         private readonly JsonSerializerSettings _serializerSettings;
         MongoRepository mongo;
 
-        public JwtController(IOptions<JwtIssuerOptions> jwtOptions, ILoggerFactory loggerFactory, MongoRepository mongo)
+        public UserController(IOptions<JwtIssuerOptions> jwtOptions, ILoggerFactory loggerFactory, MongoRepository mongo)
         {
             this.mongo = mongo;
             _jwtOptions = jwtOptions.Value;
             ThrowIfInvalidOptions(_jwtOptions);
 
-            _logger = loggerFactory.CreateLogger<JwtController>();
+            _logger = loggerFactory.CreateLogger<UserController>();
 
             _serializerSettings = new JsonSerializerSettings
             {
