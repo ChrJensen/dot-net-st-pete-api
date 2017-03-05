@@ -20,11 +20,11 @@ namespace dot_net_st_pete_api.Controllers
         private readonly JwtIssuerOptions _jwtOptions;
         private readonly ILogger _logger;
         private readonly JsonSerializerSettings _serializerSettings;
-        MongoRepository mongo;
+        private readonly IUserRepository userRepository;
 
-        public UserController(IOptions<JwtIssuerOptions> jwtOptions, ILoggerFactory loggerFactory, MongoRepository mongo)
+        public UserController(IOptions<JwtIssuerOptions> jwtOptions, ILoggerFactory loggerFactory, IUserRepository userRepository)
         {
-            this.mongo = mongo;
+            this.userRepository = userRepository;
             _jwtOptions = jwtOptions.Value;
             ThrowIfInvalidOptions(_jwtOptions);
 
@@ -50,14 +50,14 @@ namespace dot_net_st_pete_api.Controllers
             // hash and save a password
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
-            var foundUser = mongo.GetUser(user.Email);
+            var foundUser = userRepository.GetUser(user.Email);
             if (foundUser != null)
             {
                 var badUserJson = JsonConvert.SerializeObject(new { message = "Whoops, have you already registered?" }, _serializerSettings);
                 return new BadRequestObjectResult(badUserJson);
             }
 
-            var createdUser = mongo.CreateUser(new User
+            var createdUser = userRepository.AddUser(new User
             {
                 Email = user.Email,
                 Password = hashedPassword
@@ -144,7 +144,7 @@ namespace dot_net_st_pete_api.Controllers
         /// </summary>
         private Task<ClaimsIdentity> VerifyUser(User user)
         {
-            var foundUser = mongo.GetUser(user.Email);
+            var foundUser = userRepository.GetUser(user.Email);
             if (foundUser == null)
             {
                 // user does not exist
