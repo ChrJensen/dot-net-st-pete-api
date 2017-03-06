@@ -97,7 +97,7 @@ namespace dot_net_st_pete_api
                 AutomaticAuthenticate = true,
                 AutomaticChallenge = true,
                 TokenValidationParameters = buildTokenValidationParameters(),
-                AuthenticationScheme = JwtBearerDefaults.AuthenticationScheme,
+                // AuthenticationScheme = JwtBearerDefaults.AuthenticationScheme,
             });
 
             app.UseMvc();
