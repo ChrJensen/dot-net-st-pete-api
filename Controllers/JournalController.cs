@@ -31,7 +31,6 @@ namespace dot_net_st_pete_api.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous]
         public IActionResult Post([FromBody]JournalEntry j)
         {
             journalRepository.AddJournalEntry(j);
