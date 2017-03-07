@@ -8,6 +8,7 @@ using MongoDB.Driver.Builders;
 
 namespace dot_net_st_pete_api.Repository
 {
+    // todo: mix of async and sync code in repositories - update to async
     public class UserRepository : IUserRepository
     {
         private readonly UserContext _context = null;
@@ -21,7 +22,6 @@ namespace dot_net_st_pete_api.Repository
         {
             _context.Users.InsertOne(user);
             return user;
-            // await _context.Users.InsertOneAsync(user);
         }
 
         public User GetUser(string email)
@@ -29,17 +29,6 @@ namespace dot_net_st_pete_api.Repository
             var filter = Builders<User>.Filter.Eq("Email", email);
             return _context.Users.Find(filter)
                                  .FirstOrDefault();
-
-            // var res = Query<User>.EQ(u => u.Email, email);
-            // return _context.Users.Find(res).FirstOrDefault;
         }
-
-        // public async Task<User> GetUser(string email)
-        // {
-        //     var filter = Builders<User>.Filter.Eq("Email", email);
-        //     return await _context.Users
-        //                          .Find(filter)
-        //                          .FirstOrDefaultAsync();
-        // }
     }
 }

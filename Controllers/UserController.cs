@@ -137,11 +137,7 @@ namespace dot_net_st_pete_api.Controllers
                                new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero))
                               .TotalSeconds);
 
-        /// <summary>
-        /// IMAGINE BIG RED WARNING SIGNS HERE!
-        /// You'd want to retrieve claims through your claims provider
-        /// in whatever way suits you, the below is purely for demo purposes!
-        /// </summary>
+        ///<summary>verify the user and return a claim<summary>
         private Task<ClaimsIdentity> VerifyUser(User user)
         {
             var foundUser = userRepository.GetUser(user.Email);
