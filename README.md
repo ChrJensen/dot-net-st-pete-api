@@ -28,8 +28,9 @@
 [Download .NET Core SDK](https://go.microsoft.com/fwlink/?LinkID=835011)
 
 ## Usage
-* Fork this repo
-* Clone this repo
+Fork https://github.com/johnrhampton/dot-net-st-pete-api to your personal GitHub
+
+`git clone https://github.com/[your GH username]/dot-net-st-pete-api.git`
 
 ### CD to project directory
 `cd dot-net-st-pete-api`
