@@ -138,27 +138,27 @@ namespace dot_net_st_pete_api.Controllers
                               .TotalSeconds);
 
         ///<summary>verify the user and return a claim<summary>
-        private Task<ClaimsIdentity> VerifyUser(User user)
+        private async Task<ClaimsIdentity> VerifyUser(User user)
         {
-            var foundUser = userRepository.GetUser(user.Email);
+            var foundUser = await userRepository.GetUser(user.Email);
             if (foundUser == null)
             {
                 // user does not exist
-                return Task.FromResult<ClaimsIdentity>(null);
+                return null;
             }
 
             // verify password matches
             bool validPassword = BCrypt.Net.BCrypt.Verify(user.Password, foundUser.Password);
             if (validPassword)
             {
-                return Task.FromResult(new ClaimsIdentity(
+                return new ClaimsIdentity(
                                   new GenericIdentity(user.Email, "Token"),
-                                  new Claim[] { }));
+                                  new Claim[] { });
             }
             else
             {
                 // invalid credentials
-                return Task.FromResult<ClaimsIdentity>(null);
+                return null;
             }
         }
     }

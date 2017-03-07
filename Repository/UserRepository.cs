@@ -18,17 +18,16 @@ namespace dot_net_st_pete_api.Repository
             _context = new UserContext(settings);
         }
 
-        public User AddUser(User user)
+        public async Task<User> AddUser(User user)
         {
-            _context.Users.InsertOne(user);
+            await _context.Users.InsertOneAsync(user);
             return user;
         }
 
-        public User GetUser(string email)
+        public async Task<User> GetUser(string email)
         {
             var filter = Builders<User>.Filter.Eq("Email", email);
-            return _context.Users.Find(filter)
-                                 .FirstOrDefault();
+            return await _context.Users.Find(filter).FirstOrDefaultAsync();
         }
     }
 }

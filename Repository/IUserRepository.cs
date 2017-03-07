@@ -5,7 +5,7 @@ namespace dot_net_st_pete_api.Repository
 {
     public interface IUserRepository
     {
-        User GetUser(string email);
-        User AddUser(User User);
+        Task<User> GetUser(string email);
+        Task<User> AddUser(User User);
     }
 }
